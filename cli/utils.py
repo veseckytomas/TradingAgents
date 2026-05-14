@@ -251,6 +251,7 @@ def select_llm_provider() -> tuple[str, str | None]:
         ("OpenRouter", "openrouter", "https://openrouter.ai/api/v1"),
         ("Azure OpenAI", "azure", None),
         ("Ollama", "ollama", ollama_url),
+        ("Custom Endpoint (OpenAI-compatible)", "custom", None),
     ]
 
     choice = questionary.select(
@@ -274,6 +275,24 @@ def select_llm_provider() -> tuple[str, str | None]:
         exit(1)
 
     provider, url = choice
+
+    if provider == "custom":
+        # Prompt for the actual provider logic to use (standard vs deepseek)
+        provider = questionary.select(
+            "Select underlying provider logic:",
+            choices=[
+                questionary.Choice("Standard OpenAI-compatible", "openai"),
+                questionary.Choice("DeepSeek (enables reasoning_content support)", "deepseek"),
+                questionary.Choice("MiniMax (enables reasoning_split support)", "minimax"),
+            ]
+        ).ask()
+        
+        url = questionary.text(
+            "Enter custom endpoint URL (e.g. https://your-proxy.com/v1):",
+            default=os.environ.get("TRADINGAGENTS_LLM_BACKEND_URL", ""),
+            validate=lambda x: x.startswith("http") or "URL must start with http:// or https://"
+        ).ask()
+
     return provider, url
 
 
